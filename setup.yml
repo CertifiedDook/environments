@@ -1,0 +1,10 @@
+- name: Set up local development environment
+  hosts: localhost
+  vars_prompt:
+    - name: email
+      private: no
+      prompt: "Provide a email address for git"
+  # Adding 'never' as a tag requires the user to explicitly choose the tags
+  # he wishes to run
+  roles:
+    - {role: desktop, tags: ['never', 'desktop']}

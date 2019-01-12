@@ -1,0 +1,199 @@
+- name: 'Install copr dnf plugin'
+  become: true
+  dnf:
+    state: latest
+    pkg:
+      - dnf-plugins-core
+
+- name: 'Enable ripgrep copr repository'
+  become: true
+  shell: dnf copr enable -y carlwgeorge/ripgrep
+  args:
+    creates: /etc/yum.repos.d/_copr_carlwgeorge-ripgrep.repo
+
+- name: 'Install RPMFusion repository'
+  become: true
+  dnf:
+    state: latest
+    pkg:
+      - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
+      - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
+
+- name: 'Install Fedy repository'
+  become: true
+  dnf:
+    state: latest
+    pkg:
+      - https://dl.folkswithhats.org/fedora/{{ hostvars[inventory_hostname].ansible_distribution_major_version }}/RPMS/fedy-release.rpm
+
+- name: 'Install software'
+  become: true
+  dnf:
+    state: latest
+    pkg:
+      - fedy
+      - pam_ssh_agent_auth
+      - pass
+      - pass-otp
+      - ncurses-compat-libs
+      - yubikey-personalization-gui
+      - gimp
+      - libreoffice
+      - calibre
+      - git
+      - yakuake
+      - vim
+      - vim-X11
+      - meld
+      - xclip
+      - python3-ipython
+      - python-ipython
+      - python-devel
+      - python3-devel
+      - cmake
+      - gcc
+      - gcc-c++
+      - python-trollius
+      - python3-trollius
+      - kdiff3
+      - zsh
+      - util-linux-user
+      - pinentry-qt
+      - java-1.8.0*
+      - neovim
+      - python3-neovim
+      - https://prerelease.keybase.io/keybase_amd64.rpm
+      - rcm
+      - ncmpc
+
+- name: 'Configure my account'
+  become: true
+  user:
+    name: czocher
+    comment: Paweł Jan Czochański
+    shell: /bin/zsh
+    state: present
+
+- name: 'Download FiraCode font'
+  get_url:
+    url: https://github.com/tonsky/FiraCode/blob/master/distr/ttf/FiraCode-{{ item }}.ttf?raw=true
+    dest: ~/.local/share/fonts/FiraCode-{{ item }}.ttf
+  with_items:
+    - Bold
+    - Light
+    - Medium
+    - Regular
+    - Retina
+
+- name: 'Refresh font cache'
+  shell: fc-cache -f
+  changed_when: False
+
+- name: 'Install rust'
+  shell: curl https://sh.rustup.rs -sSf | bash -s -- -y
+  args:
+    creates: ~/.rustup
+
+- name: 'Configure rust'
+  shell: rustup self update && rustup install nightly && rustup component add rls-preview --toolchain nightly && rustup component add rust-analysis --toolchain nightly && rustup component add rust-src --toolchain nightly
+  args:
+    creates: ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
+
+- name: 'Clone dotfiles'
+  git:
+    repo: https://github.com/czocher/dotfiles.git
+    dest: ~/.dotfiles
+  ignore_errors: yes
+  register: dotfiles
+
+- name: 'Install dotfiles'
+  shell: rcup -f
+  args:
+    creates: ~/.zshrc
+  when: dotfiles is success
+
+- name: 'Config email address for git'
+  lineinfile:
+    path: ~/.gitconfig
+    line: '	email = {{ email }}'
+    state: present
+    insertafter: '^\s+name ='
+  when: dotfiles is success
+
+- name: 'Get plug for nvim'
+  shell: curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  args:
+    creates: ~/.config/nvim/autoload/plug.vim
+
+- name: 'Install nvim plugins'
+  shell: nvim +PlugInstall +UpdateRemotePlugins +qa
+  args:
+    creates: ~/.config/nvim/plugged
+
+- name: 'Clone git-aware-prompt'
+  git:
+    repo: https://github.com/jimeh/git-aware-prompt.git
+    dest: ~/.bash/git-aware-prompt
+    version: b032b4156241182a69c2bce36bddb97469194336
+
+- name: 'Clone oh-my-zsh'
+  git:
+    repo: https://github.com/robbyrussell/oh-my-zsh
+    dest: ~/.oh-my-zsh
+
+- name: 'Download public key'
+  get_url:
+    url: https://keybase.io/czocher/pgp_keys.asc
+    dest: ~/.publickey.asc
+
+- name: 'Add public key to gpg'
+  shell: gpg2 --import ~/.publickey.asc
+  args:
+    creates: ~/.gnupg/pubring.kbx
+
+- name: 'Add ssh publickey to authorized_keys'
+  authorized_key:
+    user: czocher
+    key: https://github.com/czocher.keys
+    state: present
+
+- name: 'Allow for sudo ssh key authentication'
+  become: true
+  pamd:
+    name: sudo
+    type: auth
+    control: include
+    module_path: system-auth
+    new_type: auth
+    new_control: sufficient
+    new_module_path: pam_ssh_agent_auth.so
+    module_arguments: file=~/.ssh/authorized_keys
+    state: before
+
+- name: 'Add ssh agent forward for sudo'
+  become: true
+  lineinfile:
+    path: /etc/sudoers
+    line: 'Defaults    env_keep += "SSH_AUTH_SOCK"'
+    state: present
+    insertafter: '^Defaults    env_keep ='
+    validate: '/usr/sbin/visudo -cf %s'
+
+- name: 'Configure TCP BBR'
+  become: true
+  sysctl:
+    name: '{{ item.name }}'
+    value: '{{ item.value }}'
+    sysctl_set: yes
+    state: present
+    reload: yes
+  with_items:
+    - { name: 'net.core.default_qdisc', value: 'fq' }
+    - { name: 'net.ipv4.tcp_congestion_control', value: 'bbr' }
+
+- name: 'Enable kdeconnect on firewall'
+  become: true
+  firewalld:
+    service: kde-connect
+    state: enabled
+    permanent: yes
