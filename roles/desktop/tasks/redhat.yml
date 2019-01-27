@@ -5,12 +5,6 @@
     pkg:
       - dnf-plugins-core
 
-- name: 'Enable ripgrep copr repository'
-  become: true
-  shell: dnf copr enable -y carlwgeorge/ripgrep
-  args:
-    creates: /etc/yum.repos.d/_copr_carlwgeorge-ripgrep.repo
-
 - name: 'Install RPMFusion repository'
   become: true
   dnf:
@@ -19,19 +13,29 @@
       - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
       - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
 
-- name: 'Install Fedy repository'
+- name: 'Try to install Fedy'
   become: true
-  dnf:
-    state: latest
-    pkg:
-      - https://dl.folkswithhats.org/fedora/{{ hostvars[inventory_hostname].ansible_distribution_major_version }}/RPMS/fedy-release.rpm
+  block:
+    - name: 'Install Fedy repository'
+      dnf:
+        state: latest
+        pkg:
+          - https://dl.folkswithhats.org/fedora/{{ hostvars[inventory_hostname].ansible_distribution_major_version }}/RPMS/fedy-release.rpm
+    - name: 'Install Fedy'
+      dnf:
+        state: latest
+        pkg:
+          - fedy
+  rescue:
+    - debug:
+        msg: 'Could not install fedy for Fedora {{ hostvars[inventory_hostname].ansible_distribution_major_version }}'
 
 - name: 'Install software'
   become: true
   dnf:
     state: latest
     pkg:
-      - fedy
+      - go
       - pam_ssh_agent_auth
       - pass
       - pass-otp
@@ -95,9 +99,10 @@
     creates: ~/.rustup
 
 - name: 'Configure rust'
-  shell: rustup self update && rustup install nightly && rustup component add rls-preview --toolchain nightly && rustup component add rust-analysis --toolchain nightly && rustup component add rust-src --toolchain nightly
+  shell: ./rustup self update && ./rustup install stable && ./rustup component add rls-preview --toolchain stable && ./rustup component add rust-analysis --toolchain stable && ./rustup component add rust-src --toolchain stable
   args:
-    creates: ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
+    chdir: ~/.cargo/bin
+    creates: ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu
 
 - name: 'Clone dotfiles'
   git:
