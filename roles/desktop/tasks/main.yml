@@ -1,1 +1,2 @@
-- import_tasks: '{{ ansible_os_family }}.yml'
+- import_tasks: 'redhat.yml'
+  when: ansible_os_family == 'RedHat'
