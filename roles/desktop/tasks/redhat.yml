@@ -156,6 +156,12 @@
   args:
     creates: ~/.gnupg/pubring.kbx
 
+- name: 'Clone password store'
+  git:
+    repo: git@bitbucket.org:czocher/pass.git
+    dest: ~/.password-store
+    accept_hostkey: yes
+
 - name: 'Add ssh publickey to authorized_keys'
   authorized_key:
     user: czocher
