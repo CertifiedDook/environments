@@ -227,3 +227,9 @@
     fstype: 'tmpfs'
     opts: 'size=10%'
     state: present
+
+- name: 'Enable fstrim'
+  become: true
+  systemd:
+    name: fstrim.timer
+    enabled: yes
