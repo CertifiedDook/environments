@@ -153,7 +153,7 @@
     dest: ~/.publickey.asc
 
 - name: 'Add public key to gpg'
-  shell: gpg2 --import ~/.publickey.asc
+  shell: gpg2 --import ~/.publickey.asc && echo "C00F912646F8908A3E9444D982843164B26A29FB:6:" | gpg2 --import-ownertrust -
   args:
     creates: ~/.gnupg/pubring.kbx
 
@@ -236,6 +236,7 @@
 
 - name: 'Find the firefox profile directory'
   shell: cat ~/.mozilla/firefox/profiles.ini | grep Path | cut -d = -f 2
+  changed_when: False
   register: profile
 
 - name: 'Copy firefox user preferences'
