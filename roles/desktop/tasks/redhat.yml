@@ -69,6 +69,7 @@
       - https://prerelease.keybase.io/keybase_amd64.rpm
       - rcm
       - ncmpc
+      - jq
 
 - name: 'Configure my account'
   become: true
