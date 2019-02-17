@@ -233,3 +233,12 @@
   systemd:
     name: fstrim.timer
     enabled: yes
+
+- name: 'Find the firefox profile directory'
+  shell: cat ~/.mozilla/firefox/profiles.ini | grep Path | cut -d = -f 2
+  register: profile
+
+- name: 'Copy firefox user preferences'
+  template:
+    src: 'user.js'
+    dest: ~/.mozilla/firefox/{{ profile.stdout }}/
