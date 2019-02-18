@@ -77,6 +77,8 @@
     name: czocher
     comment: Paweł Jan Czochański
     shell: /bin/zsh
+    groups: plugdev
+    append: true
     state: present
 
 - name: 'Download FiraCode font'
@@ -243,3 +245,17 @@
   template:
     src: 'user.js'
     dest: ~/.mozilla/firefox/{{ profile.stdout }}/
+
+- name: 'Config udev rules for android development'
+  become: true
+  template:
+    src: '99-android-debug.rules'
+    dest: /etc/udev/rules.d/
+
+- name: 'Reload udev'
+  become: true
+  command: udevadm control --reload
+
+- name: 'Restart udev service'
+  become: true
+  service: name=systemd-udevd state=restarted
