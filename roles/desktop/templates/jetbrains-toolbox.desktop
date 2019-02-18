@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=JetBrains Toolbox App
+Type=Application
+Exec=jetbrains-toolbox
+Icon=jetbrains-toolbox
+Comment=A control panel for your tools and projects
+Categories=Development;IDE;
+Keywords=Idea;PHPStorm;Web;Toolbox;Jetbrains;IDE;
+StartupNotify=true
+Terminal=false
+StartupWMClass=jetbrains-toolbox
