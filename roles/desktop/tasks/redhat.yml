@@ -120,6 +120,18 @@
   ignore_errors: yes
   register: dotfiles
 
+- name: 'Ensure proper ssh/config permissions'
+  file:
+    path: ~/.ssh/config
+    mode: '700'
+  when: dotfiles is success
+
+- name: 'Ensure proper gnupg permissions'
+  file:
+    path: ~/.gnupg/
+    mode: '700'
+  when: dotfiles is success
+
 - name: 'Install dotfiles'
   shell: rcup -f
   args:
