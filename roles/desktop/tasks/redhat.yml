@@ -72,6 +72,11 @@
       - jq
       - audacity
 
+- name: 'Create plugdev group'
+  group:
+    name: plugdev
+    state: present
+
 - name: 'Configure my account'
   become: true
   user:
