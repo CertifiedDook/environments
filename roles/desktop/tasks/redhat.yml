@@ -285,6 +285,10 @@
       get_url:
         url: '{{ jetbrains.json.TBA.0.downloads.linux.link }}'
         dest: /opt/jetbrains-toolbox.tar.gz
+    - name: 'Create the required directory'
+      file:
+        path: /opt/jetbrains-toolbox
+        state: directory
     - name: 'Unpack jetbrains-toolbox'
       become: true
       unarchive:
