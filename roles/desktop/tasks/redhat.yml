@@ -120,6 +120,12 @@
   ignore_errors: yes
   register: dotfiles
 
+- name: 'Install dotfiles'
+  shell: rcup -f
+  args:
+    creates: ~/.zshrc
+  when: dotfiles is success
+
 - name: 'Ensure proper ssh/config permissions'
   file:
     path: ~/.ssh/config
@@ -130,12 +136,6 @@
   file:
     path: ~/.gnupg/
     mode: '700'
-  when: dotfiles is success
-
-- name: 'Install dotfiles'
-  shell: rcup -f
-  args:
-    creates: ~/.zshrc
   when: dotfiles is success
 
 - name: 'Config email address for git'
