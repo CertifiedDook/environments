@@ -123,7 +123,7 @@
 - name: 'Install dotfiles'
   shell: rcup -f
   args:
-    creates: ~/.zshrc
+    creates: ~/.gnupg
   when: dotfiles is success
 
 - name: 'Ensure proper ssh/config permissions'
@@ -186,13 +186,16 @@
 - name: 'Register the private key from yubikey'
   shell: gpg2 --card-status
   changed_when: false
+  ignore_errors: yes
   when: gpg is success
+  register: yubikey
 
 - name: 'Clone password store'
   git:
     repo: git@bitbucket.org:czocher/pass.git
     dest: ~/.password-store
     accept_hostkey: yes
+  when: yubikey is success
 
 - name: 'Add ssh publickey to authorized_keys'
   authorized_key:
