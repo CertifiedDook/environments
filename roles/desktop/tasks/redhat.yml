@@ -71,6 +71,8 @@
       - ncmpc
       - jq
       - audacity
+      - mplayer
+      - pavucontrol
 
 - name: 'Create plugdev group'
   group:
