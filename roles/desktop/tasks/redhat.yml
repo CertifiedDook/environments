@@ -73,6 +73,8 @@
       - audacity
       - mplayer
       - pavucontrol
+      - exfat-utils
+      - fuse-exfat
 
 - name: 'Create plugdev group'
   group:
