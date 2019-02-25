@@ -143,11 +143,10 @@
   when: dotfiles is success
 
 - name: 'Config email address for git'
-  lineinfile:
-    path: ~/.gitconfig
-    line: '	email = {{ email }}'
-    state: present
-    insertafter: '^\s+name ='
+  git_config:
+    name: user.email
+    scope: global
+    value: '{{ email }}'
   when: dotfiles is success
 
 - name: 'Get plug for nvim'
