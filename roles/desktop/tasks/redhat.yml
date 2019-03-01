@@ -78,6 +78,8 @@
       - htop
       - kate
       - zbar
+      - libcxx
+      - libcxx.i686
 
 - name: 'Create plugdev group'
   group:
