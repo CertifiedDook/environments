@@ -43,6 +43,7 @@
       - yubikey-personalization-gui
       - gimp
       - libreoffice
+      - libreoffice-langpack-pl
       - calibre
       - git
       - yakuake
@@ -80,6 +81,8 @@
       - zbar
       - libcxx
       - libcxx.i686
+      - darktable
+      - ripgrep
 
 - name: 'Create plugdev group'
   group:
