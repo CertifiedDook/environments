@@ -83,6 +83,8 @@
       - libcxx.i686
       - darktable
       - ripgrep
+      - ffmpeg
+      - nmap
 
 - name: 'Create plugdev group'
   group:
