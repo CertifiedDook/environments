@@ -85,6 +85,7 @@
       - ripgrep
       - ffmpeg
       - nmap
+      - gnupg
 
 - name: 'Create plugdev group'
   group:
