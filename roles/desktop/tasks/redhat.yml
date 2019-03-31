@@ -90,6 +90,7 @@
   group:
     name: plugdev
     state: present
+  become: true
 
 - name: 'Configure my account'
   become: true
@@ -100,6 +101,11 @@
     groups: plugdev
     append: true
     state: present
+
+- name: 'Create the font folder'
+  file:
+    path: ~/.local/share/fonts
+    state: directory
 
 - name: 'Download FiraCode font'
   get_url:
@@ -135,7 +141,7 @@
   register: dotfiles
 
 - name: 'Install dotfiles'
-  shell: rcup -f
+  shell: rcup -vf
   args:
     creates: ~/.gnupg
   when: dotfiles is success
@@ -330,6 +336,7 @@
         url: '{{ jetbrains.json.TBA.0.downloads.linux.link }}'
         dest: /opt/jetbrains-toolbox.tar.gz
     - name: 'Create the required directory'
+      become: true
       file:
         path: /opt/jetbrains-toolbox
         state: directory
