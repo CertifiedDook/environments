@@ -177,6 +177,11 @@
   args:
     creates: ~/.config/nvim/plugged
 
+- name: 'Install virtualenvwrapper'
+  become: true
+  pip:
+    name: virtualenvwrapper
+
 - name: 'Clone git-aware-prompt'
   git:
     repo: https://github.com/jimeh/git-aware-prompt.git
@@ -194,6 +199,11 @@
     dest: ~/.publickey.asc
 
 - name: 'Add public key to gpg'
+  shell: gpg --import ~/.publickey.asc && echo "C00F912646F8908A3E9444D982843164B26A29FB:6:" | gpg --import-ownertrust -
+  args:
+    creates: ~/.gnupg/pubring.kbx
+
+- name: 'Add public key to gpg2'
   shell: gpg2 --import ~/.publickey.asc && echo "C00F912646F8908A3E9444D982843164B26A29FB:6:" | gpg2 --import-ownertrust -
   args:
     creates: ~/.gnupg/pubring.kbx
@@ -211,11 +221,16 @@
   when: gpg is success
   register: yubikey
 
+- name: 'Unset the SSH_AGENT_PID'
+  shell: unset SSH_AGENT_PID
+
 - name: 'Clone password store'
   git:
     repo: git@bitbucket.org:czocher/pass.git
     dest: ~/.password-store
     accept_hostkey: yes
+  environment:
+    SSH_AUTH_SOCK: /run/user/$UID/gnupg/S.gpg-agent.ssh
   when: yubikey is success
 
 - name: 'Add ssh publickey to authorized_keys'
