@@ -389,4 +389,32 @@
         src: 'jetbrains-toolbox.desktop'
         dest: '/usr/share/applications/jetbrains-toolbox.desktop'
 
+- name: 'Setup Telegram Desktop'
+  block:
+    - name: 'Download'
+      get_url:
+      url: https://telegram.org/dl/desktop/linux
+      dest: ~/Programy/telegram.tar.xz
+    - name: 'Unpack'
+      unarchive:
+        src: ~/Programy/telegram.tar.xz
+        dest: ~/Programy/
+    - name: 'Cleanup'
+      file:
+        path: ~/Programy/telegram.tar.gz
+        state: absent
 
+- name: 'Setup Discord'
+  block:
+    - name: 'Download'
+      get_url:
+      url: https://discordapp.com/api/download?platform=linux&format=tar.gz
+      dest: ~/Programy/discord.tar.gz
+    - name: 'Unpack'
+      unarchive:
+        src: ~/Programy/discord.tar.gz
+        dest: ~/Programy/
+    - name: 'Cleanup'
+      file:
+        path: ~/Programy/discord.tar.gz
+        state: absent
