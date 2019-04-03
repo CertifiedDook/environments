@@ -52,6 +52,7 @@
       - meld
       - xclip
       - python3-ipython
+      - python3-virtualenvwrapper
       - python-ipython
       - python-devel
       - python3-devel
