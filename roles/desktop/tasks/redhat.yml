@@ -59,7 +59,6 @@
       - cmake
       - gcc
       - gcc-c++
-      - python-trollius
       - python3-trollius
       - kdiff3
       - zsh
@@ -118,7 +117,6 @@
     - Light
     - Medium
     - Regular
-    - Retina
 
 - name: 'Refresh font cache'
   shell: fc-cache -f
@@ -169,7 +167,6 @@
 
 - name: 'Get plug for nvim'
   shell: curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-  ignore_warnings: true
   args:
     creates: ~/.config/nvim/autoload/plug.vim
 
@@ -209,30 +206,6 @@
   args:
     creates: ~/.gnupg/pubring.kbx
   register: gpg
-
-- name: 'Enable gpg-agent'
-  shell: gpg-connect-agent /bye
-  changed_when: false
-  when: gpg is success
-
-- name: 'Register the private key from yubikey'
-  shell: gpg2 --card-status
-  changed_when: false
-  ignore_errors: yes
-  when: gpg is success
-  register: yubikey
-
-- name: 'Unset the SSH_AGENT_PID'
-  shell: unset SSH_AGENT_PID
-
-- name: 'Clone password store'
-  git:
-    repo: git@bitbucket.org:czocher/pass.git
-    dest: ~/.password-store
-    accept_hostkey: yes
-  environment:
-    SSH_AUTH_SOCK: /run/user/$UID/gnupg/S.gpg-agent.ssh
-  when: yubikey is success
 
 - name: 'Add ssh publickey to authorized_keys'
   authorized_key:
@@ -338,9 +311,6 @@
         pkg:
           - java-1.8.0-openjdk
           - java-1.8.0-openjdk-devel
-          - compat-libstdc++-296.i686
-          - compat-libstdc++-33.i686
-          - compat-libstdc++-33.x86_64
           - glibc.i686
           - ncurses-libs.i686
     - name: 'Get the latest package url'
@@ -394,8 +364,8 @@
   block:
     - name: 'Download'
       get_url:
-      url: https://telegram.org/dl/desktop/linux
-      dest: ~/Programy/telegram.tar.xz
+        url: https://telegram.org/dl/desktop/linux
+        dest: ~/Programy/telegram.tar.xz
     - name: 'Unpack'
       unarchive:
         src: ~/Programy/telegram.tar.xz
@@ -409,8 +379,8 @@
   block:
     - name: 'Download'
       get_url:
-      url: https://discordapp.com/api/download?platform=linux&format=tar.gz
-      dest: ~/Programy/discord.tar.gz
+        url: https://discordapp.com/api/download?platform=linux&format=tar.gz
+        dest: ~/Programy/discord.tar.gz
     - name: 'Unpack'
       unarchive:
         src: ~/Programy/discord.tar.gz
