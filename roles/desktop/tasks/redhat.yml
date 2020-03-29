@@ -35,8 +35,11 @@
   dnf:
     state: latest
     pkg:
+      - watchdog
       - go
       - pam_ssh_agent_auth
+      - pam-u2f
+      - pamu2fcfg
       - pass
       - pass-otp
       - ncurses-compat-libs
@@ -213,7 +216,29 @@
     key: https://github.com/czocher.keys
     state: present
 
-- name: 'Allow for sudo ssh key authentication'
+- name: 'Create yubikey u2f directories for user'
+  file:
+    path: ~/.config/Yubico
+    state: directory
+
+- name: 'Create yubikey u2f directories for root'
+  become: true
+  file:
+    path: /root/.config/Yubico
+    state: directory
+
+- name: 'Configure yubikey u2f user authentication'
+  shell: pamu2fcfg > ~/.config/Yubico/u2f_keys
+  args:
+    creates: ~/.config/Yubico/u2f_keys
+
+- name: 'Configure yubikey u2f root authentication'
+  become: true
+  shell: pamu2fcfg > /root/.config/Yubico/u2f-keys
+  args:
+    creates: /root/.config/Yubico/u2f-keys
+
+- name: 'Allow for sudo yubikey authentication'
   become: true
   pamd:
     name: sudo
@@ -222,8 +247,21 @@
     module_path: system-auth
     new_type: auth
     new_control: sufficient
-    new_module_path: pam_ssh_agent_auth.so
-    module_arguments: file=~/.ssh/authorized_keys
+    new_module_path: pam_u2f.so
+    module_arguments: cue
+    state: before
+
+- name: 'Allow for su yubikey authentication'
+  become: true
+  pamd:
+    name: su
+    type: auth
+    control: include
+    module_path: system-auth
+    new_type: auth
+    new_control: sufficient
+    new_module_path: pam_u2f.so
+    module_arguments: cue
     state: before
 
 - name: 'Add ssh agent forward for sudo'
@@ -276,6 +314,12 @@
   become: true
   systemd:
     name: fstrim.timer
+    enabled: yes
+
+- name: 'Enable watchdog'
+  become: true
+  systemd:
+    name: watchdog
     enabled: yes
 
 - name: 'Find the firefox profile directory'
