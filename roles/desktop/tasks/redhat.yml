@@ -13,22 +13,19 @@
       - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
       - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
 
-- name: 'Try to install Fedy'
+- name: 'Enable Fedora copr for gopass'
   become: true
-  block:
-    - name: 'Install Fedy repository'
-      dnf:
-        state: latest
-        pkg:
-          - https://dl.folkswithhats.org/fedora/{{ hostvars[inventory_hostname].ansible_distribution_major_version }}/RPMS/fedy-release.rpm
-    - name: 'Install Fedy'
-      dnf:
-        state: latest
-        pkg:
-          - fedy
-  rescue:
-    - debug:
-        msg: 'Could not install fedy for Fedora {{ hostvars[inventory_hostname].ansible_distribution_major_version }}'
+  command:
+    cmd: dnf copr enable -y daftaupe/gopass
+    creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:daftaupe:gopass.repo
+    warn: false
+
+- name: 'Enable Fedora copr for fedy'
+  become: true
+  command:
+    cmd: dnf copr enable -y kwizart/fedy
+    creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:kwizart:fedy.repo
+    warn: false
 
 - name: 'Install software'
   become: true
@@ -36,12 +33,11 @@
     state: latest
     pkg:
       - watchdog
+      - gopass
       - go
       - pam_ssh_agent_auth
       - pam-u2f
       - pamu2fcfg
-      - pass
-      - pass-otp
       - ncurses-compat-libs
       - yubikey-personalization-gui
       - gimp
@@ -136,11 +132,16 @@
     chdir: ~/.cargo/bin
     creates: ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu
 
+- name: 'Check if dotfiles exist'
+  stat:
+    path: ~/.dotfiles
+  register: dotfiles_directory
+
 - name: 'Clone dotfiles'
   git:
     repo: https://github.com/czocher/dotfiles.git
     dest: ~/.dotfiles
-  ignore_errors: yes
+  when: dotfiles_directory.stat.exists == false
   register: dotfiles
 
 - name: 'Install dotfiles'
@@ -226,17 +227,6 @@
   file:
     path: /root/.config/Yubico
     state: directory
-
-- name: 'Configure yubikey u2f user authentication'
-  shell: pamu2fcfg > ~/.config/Yubico/u2f_keys
-  args:
-    creates: ~/.config/Yubico/u2f_keys
-
-- name: 'Configure yubikey u2f root authentication'
-  become: true
-  shell: pamu2fcfg > /root/.config/Yubico/u2f-keys
-  args:
-    creates: /root/.config/Yubico/u2f-keys
 
 - name: 'Allow for sudo yubikey authentication'
   become: true
@@ -337,18 +327,27 @@
   template:
     src: '99-android-debug.rules'
     dest: /etc/udev/rules.d/
+  register: udev
 
 - name: 'Reload udev'
   become: true
   command: udevadm control --reload
+  when: udev.changed
 
 - name: 'Restart udev service'
   become: true
   service: name=systemd-udevd state=restarted
+  when: udev.changed
+
+- name: 'Check if jetbrains exists'
+  become: true
+  stat:
+    path: /opt/jetbrains-toolbox/jetbrains-toolbox
+  register: jetbrains_binary
 
 - name: 'Install jetbrains-toolbox'
   block:
-    - name: 'Install required dependencies'
+    - name: 'Install required jetbrains dependencies'
       become: true
       dnf:
         state: latest
@@ -357,17 +356,17 @@
           - java-1.8.0-openjdk-devel
           - glibc.i686
           - ncurses-libs.i686
-    - name: 'Get the latest package url'
+    - name: 'Get the latest jetbrains package url'
       uri:
         url: 'https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release'
         return_content: yes
       register: jetbrains
-    - name: 'Download the latest package'
+    - name: 'Download the latest jetbrains package'
       become: true
       get_url:
         url: '{{ jetbrains.json.TBA.0.downloads.linux.link }}'
         dest: /opt/jetbrains-toolbox.tar.gz
-    - name: 'Create the required directory'
+    - name: 'Create the required jetbrains directory'
       become: true
       file:
         path: /opt/jetbrains-toolbox
@@ -378,12 +377,12 @@
         src: /opt/jetbrains-toolbox.tar.gz
         dest: /opt/jetbrains-toolbox
         extra_opts: [--strip-components=1]
-    - name: 'Remove the archive'
+    - name: 'Remove the jetbrains archive'
       become: true
       file:
         path: /opt/jetbrains-toolbox.tar.gz
         state: absent
-    - name: 'Link the binary'
+    - name: 'Link the jetbrains binary'
       become: true
       file:
         src: '/opt/jetbrains-toolbox/jetbrains-toolbox'
@@ -394,7 +393,7 @@
       template:
         src: 'jetbrains-toolbox.svg'
         dest: '/usr/share/icons/hicolor/scalable/apps/'
-    - name: 'Update the icons cache'
+    - name: 'Update the jetbrains icons cache'
       become: true
       command: gtk-update-icon-cache -f -t /usr/share/icons/hicolor
       changed_when: false
@@ -403,33 +402,46 @@
       template:
         src: 'jetbrains-toolbox.desktop'
         dest: '/usr/share/applications/jetbrains-toolbox.desktop'
+  when: jetbrains_binary.stat.exists == false
+
+- name: 'Check if telegram exists'
+  stat:
+    path: ~/Programy/Telegram
+  register: telegram
 
 - name: 'Setup Telegram Desktop'
   block:
-    - name: 'Download'
+    - name: 'Download telegram'
       get_url:
         url: https://telegram.org/dl/desktop/linux
         dest: ~/Programy/telegram.tar.xz
-    - name: 'Unpack'
+    - name: 'Unpack telegram'
       unarchive:
         src: ~/Programy/telegram.tar.xz
         dest: ~/Programy/
-    - name: 'Cleanup'
+    - name: 'Cleanup telegram'
       file:
         path: ~/Programy/telegram.tar.gz
         state: absent
+  when: telegram.stat.exists == false
+
+- name: 'Check if discord exists'
+  stat:
+    path: ~/Programy/Discord
+  register: discord
 
 - name: 'Setup Discord'
   block:
-    - name: 'Download'
+    - name: 'Download discord'
       get_url:
         url: https://discordapp.com/api/download?platform=linux&format=tar.gz
         dest: ~/Programy/discord.tar.gz
-    - name: 'Unpack'
+    - name: 'Unpack discord'
       unarchive:
         src: ~/Programy/discord.tar.gz
         dest: ~/Programy/
-    - name: 'Cleanup'
+    - name: 'Cleanup discord'
       file:
         path: ~/Programy/discord.tar.gz
         state: absent
+  when: discord.stat.exists == false
