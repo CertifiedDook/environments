@@ -278,18 +278,9 @@
 - name: 'Enable kdeconnect on firewall'
   become: true
   firewalld:
-    service: kde-connect
+    service: kdeconnect
     state: enabled
     permanent: yes
-
-- name: 'Prepare /var/log for SSD'
-  become: true
-  mount:
-    name: '/var/log/'
-    src: 'none'
-    fstype: 'tmpfs'
-    opts: 'size=10%'
-    state: present
 
 - name: 'Prepare /tmp for SSD'
   become: true

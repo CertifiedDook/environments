@@ -17,7 +17,7 @@ if sudo test -f /root/.config/Yubico/u2f_keys; then
   echo "pamu2fcfg already configured for root"
 else
   echo "configuring pamu2fcfg for root, press the button"
-  sudo pamu2fcfg > /root/.config/Yubico/u2f_keys
+  sudo sh -c "pamu2fcfg > /root/.config/Yubico/u2f_keys"
 fi
 
 if test -f ~/.mozilla/native-messaging-hosts/com.justwatch.gopass.json; then
