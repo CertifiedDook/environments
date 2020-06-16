@@ -32,6 +32,7 @@
   dnf:
     state: latest
     pkg:
+      - smplayer
       - restic
       - watchdog
       - gopass
