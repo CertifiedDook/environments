@@ -41,6 +41,7 @@
       - pam-u2f
       - pamu2fcfg
       - ncurses-compat-libs
+      - yubikey-manager
       - yubikey-personalization-gui
       - gimp
       - libreoffice
