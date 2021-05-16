@@ -1,0 +1,5 @@
+rpm-ostree install --idempotent ansible https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-34.noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-34.noarch.rpm
+
+rpm-ostree install --idempotent smplayer restic watchdog gopass go pam_ssh_agent_auth ncurses-compat-libs yubikey-manager yubikey-personalization-gui git yakuake vim vim-X11 xclip python3-ipython python3-virtualenvwrapper python3-devel cmake gcc gcc-c++ python3-trollius zsh util-linux-user https://prerelease.keybase.io/keybase_amd64.rpm rcm ncmpc jq mplayer exfat-utils fuse-exfat htop zbar libcxx libcxx.i686 ripgrep ffmpeg nmap
+
+flatpak install flathub -y --noninteractive org.libreoffice.LibreOffice org.audacityteam.Audacity org.gimp.GIMP org.gimp.GIMP.Plugin.Resynthesizer com.calibre_ebook.calibre com.valvesoftware.Steam org.kde.kate io.neovim.nvim org.pulseaudio.pavucontrol org.darktable.Darktable org.gnome.Meld org.kde.kdiff3 org.kde.okteta

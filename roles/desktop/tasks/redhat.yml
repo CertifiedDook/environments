@@ -1,93 +1,51 @@
-- name: 'Install copr dnf plugin'
-  become: true
-  dnf:
-    state: latest
-    pkg:
-      - dnf-plugins-core
+- name: 'Add the flathub flatpak repository remote'
+  community.general.flatpak_remote:
+    name: flathub
+    state: present
+    flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+    method: user
 
-- name: 'Install RPMFusion repository'
-  become: true
-  dnf:
-    state: latest
-    pkg:
-      - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
-      - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
+- name: 'Add kde flatpak repository remote'
+  community.general.flatpak_remote:
+    name: kdeapps
+    state: present
+    flatpakrepo_url: https://distribute.kde.org/kdeapps.flatpakrepo
+    method: user
 
-- name: 'Enable Fedora copr for gopass'
-  become: true
-  command:
-    cmd: dnf copr enable -y daftaupe/gopass
-    creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:daftaupe:gopass.repo
-    warn: false
+- name: 'Install flatpaks'
+  community.general.flatpak:
+    name: '{{ item }}'
+    state: present
+    method: user
+    remote: flathub
+  with_items:
+    - org.libreoffice.LibreOffice
+    - org.audacityteam.Audacity
+    - org.gimp.GIMP
+    - org.gimp.GIMP.Plugin.Resynthesizer/x86_64/2-40
+    - com.calibre_ebook.calibre
+    - com.valvesoftware.Steam
+    - org.kde.kate
+    - io.neovim.nvim
+    - org.pulseaudio.pavucontrol
+    - org.darktable.Darktable
+    - org.gnome.Meld
+    - org.kde.okteta
 
-- name: 'Enable Fedora copr for fedy'
-  become: true
-  command:
-    cmd: dnf copr enable -y kwizart/fedy
-    creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:kwizart:fedy.repo
-    warn: false
+- name: 'Install flatpaks from kdeapps'
+  community.general.flatpak:
+    name: '{{ item }}'
+    state: present
+    method: user
+    remote: kdeapps
+  with_items:
+    - org.kde.kdiff3
 
-- name: 'Install software'
-  become: true
-  dnf:
-    state: latest
-    pkg:
-      - smplayer
-      - restic
-      - watchdog
-      - gopass
-      - go
-      - pam_ssh_agent_auth
-      - pam-u2f
-      - pamu2fcfg
-      - ncurses-compat-libs
-      - yubikey-manager
-      - yubikey-personalization-gui
-      - gimp
-      - libreoffice
-      - libreoffice-langpack-pl
-      - calibre
-      - git
-      - yakuake
-      - vim
-      - vim-X11
-      - meld
-      - xclip
-      - python3-ipython
-      - python3-virtualenvwrapper
-      - python-ipython
-      - python-devel
-      - python3-devel
-      - cmake
-      - gcc
-      - gcc-c++
-      - python3-trollius
-      - kdiff3
-      - zsh
-      - util-linux-user
-      - pinentry-qt
-      - java-1.8.0*
-      - neovim
-      - python3-neovim
-      - https://prerelease.keybase.io/keybase_amd64.rpm
-      - rcm
-      - ncmpc
-      - jq
-      - audacity
-      - mplayer
-      - pavucontrol
-      - exfat-utils
-      - fuse-exfat
-      - htop
-      - kate
-      - zbar
-      - libcxx
-      - libcxx.i686
-      - darktable
-      - ripgrep
-      - ffmpeg
-      - nmap
-      - gnupg
+
+# Enable copr for gopass
+# Install rpmfusion
+# Install gopass-jsonapi
+# Change hostname to a user-provided one
 
 - name: 'Create plugdev group'
   group:
@@ -110,6 +68,7 @@
     path: ~/.local/share/fonts
     state: directory
 
+# Add check if already downloaded
 - name: 'Download FiraCode font'
   get_url:
     url: https://github.com/tonsky/FiraCode/blob/master/distr/ttf/FiraCode-{{ item }}.ttf?raw=true
@@ -123,17 +82,6 @@
 - name: 'Refresh font cache'
   shell: fc-cache -f
   changed_when: False
-
-- name: 'Install rust'
-  shell: curl https://sh.rustup.rs -sSf | bash -s -- -y
-  args:
-    creates: ~/.rustup
-
-- name: 'Configure rust'
-  shell: ./rustup self update && ./rustup install stable && ./rustup component add rls-preview --toolchain stable && ./rustup component add rust-analysis --toolchain stable && ./rustup component add rust-src --toolchain stable
-  args:
-    chdir: ~/.cargo/bin
-    creates: ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu
 
 - name: 'Check if dotfiles exist'
   stat:
@@ -182,11 +130,6 @@
   args:
     creates: ~/.config/nvim/plugged
 
-- name: 'Install virtualenvwrapper'
-  become: true
-  pip:
-    name: virtualenvwrapper
-
 - name: 'Clone git-aware-prompt'
   git:
     repo: https://github.com/jimeh/git-aware-prompt.git
@@ -220,42 +163,12 @@
     key: https://github.com/czocher.keys
     state: present
 
-- name: 'Create yubikey u2f directories for user'
-  file:
-    path: ~/.config/Yubico
-    state: directory
-
-- name: 'Create yubikey u2f directories for root'
+- name: 'Add ssh publickey to authorized_keys'
   become: true
-  file:
-    path: /root/.config/Yubico
-    state: directory
-
-- name: 'Allow for sudo yubikey authentication'
-  become: true
-  pamd:
-    name: sudo
-    type: auth
-    control: include
-    module_path: system-auth
-    new_type: auth
-    new_control: sufficient
-    new_module_path: pam_u2f.so
-    module_arguments: cue
-    state: before
-
-- name: 'Allow for su yubikey authentication'
-  become: true
-  pamd:
-    name: su
-    type: auth
-    control: include
-    module_path: system-auth
-    new_type: auth
-    new_control: sufficient
-    new_module_path: pam_u2f.so
-    module_arguments: cue
-    state: before
+  authorized_key:
+    user: root
+    key: https://github.com/czocher.keys
+    state: present
 
 - name: 'Add ssh agent forward for sudo'
   become: true
@@ -284,21 +197,6 @@
     service: kdeconnect
     state: enabled
     permanent: yes
-
-- name: 'Prepare /tmp for SSD'
-  become: true
-  mount:
-    name: '/tmp/'
-    src: 'none'
-    fstype: 'tmpfs'
-    opts: 'size=10%'
-    state: present
-
-- name: 'Enable fstrim'
-  become: true
-  systemd:
-    name: fstrim.timer
-    enabled: yes
 
 - name: 'Enable watchdog'
   become: true
@@ -333,69 +231,50 @@
   service: name=systemd-udevd state=restarted
   when: udev.changed
 
-- name: 'Check if jetbrains exists'
+- name: 'Allow for sudo ssh key authentication'
   become: true
+  pamd:
+    name: sudo
+    type: auth
+    control: include
+    module_path: system-auth
+    new_type: auth
+    new_control: sufficient
+    new_module_path: pam_ssh_agent_auth.so
+    module_arguments: file=/root/.ssh/authorized_keys
+    state: before
+
+# Create ~/Programy if doesn't exist
+
+- name: 'Check if jetbrains exists'
   stat:
-    path: /opt/jetbrains-toolbox/jetbrains-toolbox
+    path: ~/Programy/jetbrains-toolbox/jetbrains-toolbox
   register: jetbrains_binary
 
 - name: 'Install jetbrains-toolbox'
   block:
-    - name: 'Install required jetbrains dependencies'
-      become: true
-      dnf:
-        state: latest
-        pkg:
-          - java-1.8.0-openjdk
-          - java-1.8.0-openjdk-devel
-          - glibc.i686
-          - ncurses-libs.i686
     - name: 'Get the latest jetbrains package url'
       uri:
         url: 'https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release'
         return_content: yes
       register: jetbrains
     - name: 'Download the latest jetbrains package'
-      become: true
       get_url:
         url: '{{ jetbrains.json.TBA.0.downloads.linux.link }}'
-        dest: /opt/jetbrains-toolbox.tar.gz
+        dest: ~/Programy/jetbrains-toolbox.tar.gz
     - name: 'Create the required jetbrains directory'
-      become: true
       file:
-        path: /opt/jetbrains-toolbox
+        path: ~/Programy/jetbrains-toolbox
         state: directory
     - name: 'Unpack jetbrains-toolbox'
-      become: true
       unarchive:
-        src: /opt/jetbrains-toolbox.tar.gz
-        dest: /opt/jetbrains-toolbox
+        src: ~/Programy/jetbrains-toolbox.tar.gz
+        dest: ~/Programy/jetbrains-toolbox
         extra_opts: [--strip-components=1]
     - name: 'Remove the jetbrains archive'
-      become: true
       file:
-        path: /opt/jetbrains-toolbox.tar.gz
+        path: ~/Programy/jetbrains-toolbox.tar.gz
         state: absent
-    - name: 'Link the jetbrains binary'
-      become: true
-      file:
-        src: '/opt/jetbrains-toolbox/jetbrains-toolbox'
-        dest: '/usr/bin/jetbrains-toolbox'
-        state: link
-    - name: 'Copy jetbrains-toolbox icon'
-      become: true
-      template:
-        src: 'jetbrains-toolbox.svg'
-        dest: '/usr/share/icons/hicolor/scalable/apps/'
-    - name: 'Update the jetbrains icons cache'
-      become: true
-      command: gtk-update-icon-cache -f -t /usr/share/icons/hicolor
-      changed_when: false
-    - name: 'Copy the desktop entry'
-      become: true
-      template:
-        src: 'jetbrains-toolbox.desktop'
-        dest: '/usr/share/applications/jetbrains-toolbox.desktop'
   when: jetbrains_binary.stat.exists == false
 
 - name: 'Check if telegram exists'
