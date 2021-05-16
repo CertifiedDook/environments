@@ -8,10 +8,19 @@
 - name: 'Install RPMFusion repository'
   become: true
   dnf:
+    disable_gpg_check: yes
     state: latest
     pkg:
       - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
       - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
+
+- name: 'Install docker community repository'
+  become: true
+  command:
+    cmd: dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+    creates: /etc/yum.repos.d/docker-ce.repo
+    warn: false
+
 
 - name: 'Enable Fedora copr for gopass'
   become: true
@@ -36,10 +45,7 @@
       - restic
       - watchdog
       - gopass
-      - go
       - pam_ssh_agent_auth
-      - pam-u2f
-      - pamu2fcfg
       - ncurses-compat-libs
       - yubikey-manager
       - yubikey-personalization-gui
@@ -54,9 +60,6 @@
       - meld
       - xclip
       - python3-ipython
-      - python3-virtualenvwrapper
-      - python-ipython
-      - python-devel
       - python3-devel
       - cmake
       - gcc
@@ -66,10 +69,8 @@
       - zsh
       - util-linux-user
       - pinentry-qt
-      - java-1.8.0*
       - neovim
       - python3-neovim
-      - https://prerelease.keybase.io/keybase_amd64.rpm
       - rcm
       - ncmpc
       - jq
@@ -88,12 +89,21 @@
       - ffmpeg
       - nmap
       - gnupg
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
 
 - name: 'Create plugdev group'
+  become: true
   group:
     name: plugdev
     state: present
+
+- name: 'Create docker group'
   become: true
+  group:
+    name: docker
+    state: present
 
 - name: 'Configure my account'
   become: true
@@ -101,7 +111,7 @@
     name: czocher
     comment: Paweł Jan Czochański
     shell: /bin/zsh
-    groups: plugdev
+    groups: plugdev, docker
     append: true
     state: present
 
@@ -123,17 +133,6 @@
 - name: 'Refresh font cache'
   shell: fc-cache -f
   changed_when: False
-
-- name: 'Install rust'
-  shell: curl https://sh.rustup.rs -sSf | bash -s -- -y
-  args:
-    creates: ~/.rustup
-
-- name: 'Configure rust'
-  shell: ./rustup self update && ./rustup install stable && ./rustup component add rls-preview --toolchain stable && ./rustup component add rust-analysis --toolchain stable && ./rustup component add rust-src --toolchain stable
-  args:
-    chdir: ~/.cargo/bin
-    creates: ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu
 
 - name: 'Check if dotfiles exist'
   stat:
@@ -175,17 +174,13 @@
 - name: 'Get plug for nvim'
   shell: curl -fLo ~/.config/nvim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
   args:
+    warn: false
     creates: ~/.config/nvim/autoload/plug.vim
 
 - name: 'Install nvim plugins'
   shell: nvim +PlugInstall +UpdateRemotePlugins +qa
   args:
     creates: ~/.config/nvim/plugged
-
-- name: 'Install virtualenvwrapper'
-  become: true
-  pip:
-    name: virtualenvwrapper
 
 - name: 'Clone git-aware-prompt'
   git:
@@ -220,18 +215,14 @@
     key: https://github.com/czocher.keys
     state: present
 
-- name: 'Create yubikey u2f directories for user'
-  file:
-    path: ~/.config/Yubico
-    state: directory
-
-- name: 'Create yubikey u2f directories for root'
+- name: 'Add ssh publickey to root authorized_keys'
   become: true
-  file:
-    path: /root/.config/Yubico
-    state: directory
+  authorized_key:
+    user: root
+    key: https://github.com/czocher.keys
+    state: present
 
-- name: 'Allow for sudo yubikey authentication'
+- name: 'Allow for sudo ssh key authentication'
   become: true
   pamd:
     name: sudo
@@ -240,11 +231,11 @@
     module_path: system-auth
     new_type: auth
     new_control: sufficient
-    new_module_path: pam_u2f.so
-    module_arguments: cue
+    new_module_path: pam_ssh_agent_auth.so
+    module_arguments: file=/root/.ssh/authorized_keys
     state: before
 
-- name: 'Allow for su yubikey authentication'
+- name: 'Allow for su ssh key authentication'
   become: true
   pamd:
     name: su
@@ -253,8 +244,8 @@
     module_path: system-auth
     new_type: auth
     new_control: sufficient
-    new_module_path: pam_u2f.so
-    module_arguments: cue
+    new_module_path: pam_ssh_agent_auth.so
+    module_arguments: file=/root/.ssh/authorized_keys
     state: before
 
 - name: 'Add ssh agent forward for sudo'
@@ -285,25 +276,16 @@
     state: enabled
     permanent: yes
 
-- name: 'Prepare /tmp for SSD'
-  become: true
-  mount:
-    name: '/tmp/'
-    src: 'none'
-    fstype: 'tmpfs'
-    opts: 'size=10%'
-    state: present
-
-- name: 'Enable fstrim'
-  become: true
-  systemd:
-    name: fstrim.timer
-    enabled: yes
-
 - name: 'Enable watchdog'
   become: true
   systemd:
     name: watchdog
+    enabled: yes
+
+- name: 'Enable docker'
+  become: true
+  systemd:
+    name: docker
     enabled: yes
 
 - name: 'Find the firefox profile directory'
@@ -333,69 +315,40 @@
   service: name=systemd-udevd state=restarted
   when: udev.changed
 
+- name: 'Create ~/Programy if missing'
+  file:
+    path: ~/Programy
+    state: directory
+
 - name: 'Check if jetbrains exists'
-  become: true
   stat:
-    path: /opt/jetbrains-toolbox/jetbrains-toolbox
+    path: ~/Programy/jetbrains-toolbox/jetbrains-toolbox
   register: jetbrains_binary
 
 - name: 'Install jetbrains-toolbox'
   block:
-    - name: 'Install required jetbrains dependencies'
-      become: true
-      dnf:
-        state: latest
-        pkg:
-          - java-1.8.0-openjdk
-          - java-1.8.0-openjdk-devel
-          - glibc.i686
-          - ncurses-libs.i686
     - name: 'Get the latest jetbrains package url'
       uri:
         url: 'https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release'
         return_content: yes
       register: jetbrains
     - name: 'Download the latest jetbrains package'
-      become: true
       get_url:
         url: '{{ jetbrains.json.TBA.0.downloads.linux.link }}'
-        dest: /opt/jetbrains-toolbox.tar.gz
+        dest: ~/Programy/jetbrains-toolbox.tar.gz
     - name: 'Create the required jetbrains directory'
-      become: true
       file:
-        path: /opt/jetbrains-toolbox
+        path: ~/Programy/jetbrains-toolbox
         state: directory
     - name: 'Unpack jetbrains-toolbox'
-      become: true
       unarchive:
-        src: /opt/jetbrains-toolbox.tar.gz
-        dest: /opt/jetbrains-toolbox
+        src: ~/Programy/jetbrains-toolbox.tar.gz
+        dest: ~/Programy/jetbrains-toolbox
         extra_opts: [--strip-components=1]
     - name: 'Remove the jetbrains archive'
-      become: true
       file:
-        path: /opt/jetbrains-toolbox.tar.gz
+        path: ~/Programy/jetbrains-toolbox.tar.gz
         state: absent
-    - name: 'Link the jetbrains binary'
-      become: true
-      file:
-        src: '/opt/jetbrains-toolbox/jetbrains-toolbox'
-        dest: '/usr/bin/jetbrains-toolbox'
-        state: link
-    - name: 'Copy jetbrains-toolbox icon'
-      become: true
-      template:
-        src: 'jetbrains-toolbox.svg'
-        dest: '/usr/share/icons/hicolor/scalable/apps/'
-    - name: 'Update the jetbrains icons cache'
-      become: true
-      command: gtk-update-icon-cache -f -t /usr/share/icons/hicolor
-      changed_when: false
-    - name: 'Copy the desktop entry'
-      become: true
-      template:
-        src: 'jetbrains-toolbox.desktop'
-        dest: '/usr/share/applications/jetbrains-toolbox.desktop'
   when: jetbrains_binary.stat.exists == false
 
 - name: 'Check if telegram exists'
@@ -415,7 +368,7 @@
         dest: ~/Programy/
     - name: 'Cleanup telegram'
       file:
-        path: ~/Programy/telegram.tar.gz
+        path: ~/Programy/telegram.tar.xz
         state: absent
   when: telegram.stat.exists == false
 
