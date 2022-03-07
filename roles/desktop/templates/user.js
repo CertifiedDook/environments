@@ -4,4 +4,4 @@ user_pref("browser.cache.memory.capacity", -1);
 user_pref("browser.cache.memory.enable", true);
 user_pref("security.webauth.u2f", true);
 user_pref("extensions.pocket.enabled", false);
-lockPref("signon.rememberSignons", false);
+user_pref("signon.rememberSignons", false);
