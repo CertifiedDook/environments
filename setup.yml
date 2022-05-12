@@ -3,7 +3,8 @@
   vars_prompt:
     - name: email
       private: no
-      prompt: "Provide a email address for git"
+      prompt: 'Provide a email address for git'
+      default: 'pawel@czochanski.pl'
   # Adding 'never' as a tag requires the user to explicitly choose the tags
   # he wishes to run
   roles:

@@ -1,3 +1,27 @@
+- name: 'Add the flathub flatpak repository remote to the user installation'
+  community.general.flatpak_remote:
+    name: flathub
+    state: present
+    flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+    method: user
+
+- name: 'Install apps from flathub'
+  community.general.flatpak:
+    name:
+      - com.discordapp.Discord
+      - org.telegram.desktop
+    state: present
+    method: user
+
+- name: 'Add VSCode repository'
+  become: true
+  yum_repository:
+    name: vscode
+    description: vscode
+    baseurl: https://packages.microsoft.com/yumrepos/vscode
+    gpgcheck: yes
+    gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+
 - name: 'Install copr dnf plugin'
   become: true
   dnf:
@@ -5,11 +29,19 @@
     pkg:
       - dnf-plugins-core
 
+- name: 'Load GPG key for packages'
+  become: true
+  rpm_key:
+    state: present
+    key: '{{ item }}'
+  loop:
+    - https://keybase.io/docs/server_security/code_signing_key.asc
+
 - name: 'Install RPMFusion repository'
   become: true
   dnf:
-    disable_gpg_check: yes
     state: latest
+    disable_gpg_check: true
     pkg:
       - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
       - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ hostvars[inventory_hostname].ansible_distribution_major_version }}.noarch.rpm
@@ -41,10 +73,11 @@
   dnf:
     state: latest
     pkg:
+      - fira-code-fonts
+      - code
       - smplayer
       - restic
       - watchdog
-      - gopass
       - pam_ssh_agent_auth
       - ncurses-compat-libs
       - yubikey-manager
@@ -69,8 +102,10 @@
       - zsh
       - util-linux-user
       - pinentry-qt
+      - java*
       - neovim
       - python3-neovim
+      - https://prerelease.keybase.io/keybase_amd64.rpm
       - rcm
       - ncmpc
       - jq
@@ -115,24 +150,20 @@
     append: true
     state: present
 
-- name: 'Create the font folder'
-  file:
-    path: ~/.local/share/fonts
-    state: directory
-
-- name: 'Download FiraCode font'
-  get_url:
-    url: https://github.com/tonsky/FiraCode/blob/master/distr/ttf/FiraCode-{{ item }}.ttf?raw=true
-    dest: ~/.local/share/fonts/FiraCode-{{ item }}.ttf
-  with_items:
-    - Bold
-    - Light
-    - Medium
-    - Regular
-
 - name: 'Refresh font cache'
   shell: fc-cache -f
   changed_when: False
+
+- name: 'Install rust'
+  shell: curl https://sh.rustup.rs -sSf | bash -s -- -y
+  args:
+    creates: ~/.rustup
+
+- name: 'Configure rust'
+  shell: ./rustup self update && ./rustup install stable && ./rustup component add rls-preview --toolchain stable && ./rustup component add rust-analysis --toolchain stable && ./rustup component add rust-src --toolchain stable
+  args:
+    chdir: ~/.cargo/bin
+    creates: ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu
 
 - name: 'Check if dotfiles exist'
   stat:
@@ -276,16 +307,16 @@
     state: enabled
     permanent: yes
 
+- name: 'Enable fstrim'
+  become: true
+  systemd:
+    name: fstrim.timer
+    enabled: yes
+
 - name: 'Enable watchdog'
   become: true
   systemd:
     name: watchdog
-    enabled: yes
-
-- name: 'Enable docker'
-  become: true
-  systemd:
-    name: docker
     enabled: yes
 
 - name: 'Find the firefox profile directory'
@@ -314,81 +345,3 @@
   become: true
   service: name=systemd-udevd state=restarted
   when: udev.changed
-
-- name: 'Create ~/Programy if missing'
-  file:
-    path: ~/Programy
-    state: directory
-
-- name: 'Check if jetbrains exists'
-  stat:
-    path: ~/Programy/jetbrains-toolbox/jetbrains-toolbox
-  register: jetbrains_binary
-
-- name: 'Install jetbrains-toolbox'
-  block:
-    - name: 'Get the latest jetbrains package url'
-      uri:
-        url: 'https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release'
-        return_content: yes
-      register: jetbrains
-    - name: 'Download the latest jetbrains package'
-      get_url:
-        url: '{{ jetbrains.json.TBA.0.downloads.linux.link }}'
-        dest: ~/Programy/jetbrains-toolbox.tar.gz
-    - name: 'Create the required jetbrains directory'
-      file:
-        path: ~/Programy/jetbrains-toolbox
-        state: directory
-    - name: 'Unpack jetbrains-toolbox'
-      unarchive:
-        src: ~/Programy/jetbrains-toolbox.tar.gz
-        dest: ~/Programy/jetbrains-toolbox
-        extra_opts: [--strip-components=1]
-    - name: 'Remove the jetbrains archive'
-      file:
-        path: ~/Programy/jetbrains-toolbox.tar.gz
-        state: absent
-  when: jetbrains_binary.stat.exists == false
-
-- name: 'Check if telegram exists'
-  stat:
-    path: ~/Programy/Telegram
-  register: telegram
-
-- name: 'Setup Telegram Desktop'
-  block:
-    - name: 'Download telegram'
-      get_url:
-        url: https://telegram.org/dl/desktop/linux
-        dest: ~/Programy/telegram.tar.xz
-    - name: 'Unpack telegram'
-      unarchive:
-        src: ~/Programy/telegram.tar.xz
-        dest: ~/Programy/
-    - name: 'Cleanup telegram'
-      file:
-        path: ~/Programy/telegram.tar.xz
-        state: absent
-  when: telegram.stat.exists == false
-
-- name: 'Check if discord exists'
-  stat:
-    path: ~/Programy/Discord
-  register: discord
-
-- name: 'Setup Discord'
-  block:
-    - name: 'Download discord'
-      get_url:
-        url: https://discordapp.com/api/download?platform=linux&format=tar.gz
-        dest: ~/Programy/discord.tar.gz
-    - name: 'Unpack discord'
-      unarchive:
-        src: ~/Programy/discord.tar.gz
-        dest: ~/Programy/
-    - name: 'Cleanup discord'
-      file:
-        path: ~/Programy/discord.tar.gz
-        state: absent
-  when: discord.stat.exists == false
