@@ -311,7 +311,6 @@
 - name: 'Enable the clean_downloads systemd timer'
   systemd:
     scope: user
-    name: fstrim.timer
+    name: clean_downloads.timer
     state: started
     enabled: true
-

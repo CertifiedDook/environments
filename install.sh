@@ -2,6 +2,6 @@
 
 trap "exit" INT
 
-sudo dnf install ansible -y -q
+sudo rpm-ostree install ansible --idempotent --apply-live
 
 ansible-playbook setup.yml --tags desktop -K -i hosts.yml
