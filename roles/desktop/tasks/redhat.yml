@@ -298,3 +298,20 @@
   state: started
   enabled: true
 
+- name: 'Add clean_downloads systemd user service'
+  template:
+    src: templates/clean_downloads.service
+    dest: ~/.config/systemd/user/clean_downloads.service
+
+- name: 'Add clean_downloads systemd user timer'
+  template:
+    src: templates/clean_downloads.timer
+    dest: ~/.config/systemd/user/clean_downloads.timer
+
+- name: 'Enable the clean_downloads systemd timer'
+  systemd:
+    scope: user
+    name: fstrim.timer
+    state: started
+    enabled: true
+
