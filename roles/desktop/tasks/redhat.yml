@@ -187,6 +187,13 @@
     key: https://github.com/czocher.keys
     state: present
 
+- name: 'Add ssh publickey to root authorized_keys'
+  become: true
+  authorized_key:
+    user: root
+    key: https://github.com/czocher.keys
+    state: present
+
 - name: 'Allow for sudo ssh key authentication'
   become: true
   pamd:
@@ -279,3 +286,15 @@
   become: true
   service: name=systemd-udevd state=restarted
   when: udev.changed
+
+- name: 'Add restart_pcscd service'
+  template:
+    src: templates/restart_pcscd.service
+    dest: /lib/systemd/system/restart_pcscd.service
+
+- name: 'Enable restart_pcscd service'
+  become: true
+  name: restart_pcscd.service
+  state: started
+  enabled: true
+
