@@ -34,6 +34,7 @@
   become: true
   community.general.rpm_ostree_pkg:
     pkg:
+      - mozilla-openh264
       - python3-virtualenvwrapper
       - fira-code-fonts
       - restic
