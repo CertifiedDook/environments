@@ -2,7 +2,7 @@
 Description=Clean downloads timer
 
 [Timer]
-OnCalendar=weekly
+OnCalendar=daily
 Persistent=true
 
 [Install]
