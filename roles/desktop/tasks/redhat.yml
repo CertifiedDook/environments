@@ -59,7 +59,7 @@
       - python3-neovim
       - rcm
       - ncmpc
-      - mplayer
+#      - mplayer
       - exfat-utils
       - fuse-exfat
       - htop
@@ -67,7 +67,7 @@
       - libcxx
       - libcxx.i686
       - ripgrep
-      - ffmpeg
+#      - ffmpeg
       - nmap
 
 - name: 'Enable podman socket'
@@ -283,28 +283,29 @@
   command: udevadm control --reload
   when: udev.changed
 
-- name: 'Restart udev service'
+- name: 'Restart the udev service'
   become: true
   service: name=systemd-udevd state=restarted
   when: udev.changed
 
-- name: 'Add restart_pcscd service'
+- name: 'Add the restart_pcscd service'
   template:
     src: templates/restart_pcscd.service
-    dest: /lib/systemd/system/restart_pcscd.service
+    dest: /etc/systemd/system/restart_pcscd.service
 
-- name: 'Enable restart_pcscd service'
+- name: 'Enable the restart_pcscd service'
   become: true
-  name: restart_pcscd.service
-  state: started
-  enabled: true
+  systemd:
+    name: restart_pcscd.service
+    state: started
+    enabled: true
 
-- name: 'Add clean_downloads systemd user service'
+- name: 'Add the clean_downloads systemd user service'
   template:
     src: templates/clean_downloads.service
     dest: ~/.config/systemd/user/clean_downloads.service
 
-- name: 'Add clean_downloads systemd user timer'
+- name: 'Add the clean_downloads systemd user timer'
   template:
     src: templates/clean_downloads.timer
     dest: ~/.config/systemd/user/clean_downloads.timer
@@ -313,5 +314,22 @@
   systemd:
     scope: user
     name: clean_downloads.timer
+    state: started
+    enabled: true
+
+- name: 'Add the backup systemd user service'
+  template:
+    src: templates/backup.service
+    dest: ~/.config/systemd/user/backup.service
+
+- name: 'Add the backup systemd user timer'
+  template:
+    src: templates/backup.timer
+    dest: ~/.config/systemd/user/backup.timer
+
+- name: 'Enable the backup systemd timer'
+  systemd:
+    scope: user
+    name: backup.timer
     state: started
     enabled: true

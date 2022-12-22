@@ -1,0 +1,7 @@
+[Unit]
+Description=Clean downloads service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash /home/czocher/.bin/backup.sh
+WorkingDirectory=/home/czocher
