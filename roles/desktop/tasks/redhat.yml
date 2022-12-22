@@ -23,6 +23,12 @@
     state: present
     method: user
 
+- name: 'Override the theme used by flatpak apps'
+  command: flatpak override --user --filesystem=xdg-config/gtk-3.0:ro;
+
+- name: 'Set the dark theme for flatpak apps'
+  command: flatpak override --user --env=GTK_THEME=Breeze-Dark
+
 - name: 'Install rpmfusion repositories'
   become: true
   community.general.rpm_ostree_pkg:
