@@ -1,9 +1,0 @@
-[Unit]
-Description=Restart pcscd service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/systemctl restart pcscd
-
-[Install]
-WantedBy=default.target

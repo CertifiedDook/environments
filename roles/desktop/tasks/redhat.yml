@@ -19,7 +19,6 @@
       - org.audacityteam.Audacity
       - org.pulseaudio.pavucontrol
       - org.darktable.Darktable
-      - com.visualstudio.code
     state: present
     method: user
 
@@ -66,8 +65,8 @@
       - rcm
       - ncmpc
 #      - mplayer
-      - exfat-utils
-      - fuse-exfat
+#      - exfat-utils
+#      - fuse-exfat
       - htop
       - zbar
       - libcxx
@@ -294,17 +293,10 @@
   service: name=systemd-udevd state=restarted
   when: udev.changed
 
-- name: 'Add the restart_pcscd service'
-  template:
-    src: templates/restart_pcscd.service
-    dest: /etc/systemd/system/restart_pcscd.service
-
-- name: 'Enable the restart_pcscd service'
-  become: true
-  systemd:
-    name: restart_pcscd.service
-    state: started
-    enabled: true
+- name: 'Create user systemd directories'
+  file:
+    path: ~/.config/systemd/user
+    state: directory
 
 - name: 'Add the clean_downloads systemd user service'
   template:
@@ -339,3 +331,12 @@
     name: backup.timer
     state: started
     enabled: true
+
+- name: 'Adjust systemd timeouts'
+  become: true
+  blockinfile:
+    path: /etc/systemd/system.conf
+    block: |
+      DefaultTimeoutStartSec=5s
+      DefaultTimeoutStopSec=5s
+      DefaultTimeoutAbortSec=5s
