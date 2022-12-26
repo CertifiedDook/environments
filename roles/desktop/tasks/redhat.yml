@@ -19,6 +19,7 @@
       - org.audacityteam.Audacity
       - org.pulseaudio.pavucontrol
       - org.darktable.Darktable
+      - org.gtk.Gtk3theme.Breeze
     state: present
     method: user
 
