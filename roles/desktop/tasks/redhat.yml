@@ -349,3 +349,14 @@
       DefaultTimeoutStartSec=5s
       DefaultTimeoutStopSec=5s
       DefaultTimeoutAbortSec=5s
+
+- name: 'Create the ~/.bin directory'
+  ansible.builtin.file:
+    path: ~/.bin
+    state: directory
+
+- name: Creating a symlink
+  ansible.builtin.file:
+    src: '/usr/bin/podman'
+    dest: '~/.bin/docker'
+    state: link
