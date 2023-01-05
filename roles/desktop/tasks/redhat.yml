@@ -84,6 +84,13 @@
     state: started
     enabled: true
 
+- name: 'Enable the user podman socket'
+  ansible.builtin.systemd:
+    scope: user
+    name: podman.socket
+    state: started
+    enabled: true
+
 - name: 'Create plugdev group'
   become: true
   group:
