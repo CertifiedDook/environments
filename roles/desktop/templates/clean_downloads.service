@@ -3,5 +3,5 @@ Description=Clean downloads service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/rm -rf `/usr/bin/xdg-user-dir DOWNLOAD`/*
+ExecStart=bash -c '/usr/bin/rm -rf `/usr/bin/xdg-user-dir DOWNLOAD`/*'
 WorkingDirectory=/home/czocher
