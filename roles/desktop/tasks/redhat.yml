@@ -76,6 +76,7 @@
       - ripgrep
 #      - ffmpeg
       - nmap
+      - kate
 
 - name: 'Enable podman socket'
   become: true
