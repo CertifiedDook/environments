@@ -74,14 +74,20 @@
       - libcxx
       - libcxx.i686
       - ripgrep
-      - ffmpeg
+        #      - ffmpeg
       - nmap
       - kate
 
+- name: 'Install node LTS'
+  ansible.builtin.unarchive:
+    src: https://nodejs.org/dist/v18.16.0/node-v18.16.0-linux-x64.tar.xz
+    dest: ~/Programy/
+    remote_src: yes
+
 - name: 'Install commitizen'
-  community.general.npm:
-    name: commitizen
-    path: ~/Programy/commitizen
+  command: ~/Programy/node-v18.16.0-linux-x64/bin/npm install -g commitizen cz-conventional-changelog
+  args:
+    creates: ~/Programy/node-v18.16.0-linux-x64/bin/git-cz
 
 - name: 'Enable podman socket'
   become: true
