@@ -66,17 +66,22 @@
       - python3-neovim
       - rcm
       - ncmpc
-#      - mplayer
-#      - exfat-utils
-#      - fuse-exfat
+      - mplayer
+      - exfat-utils
+      - fuse-exfat
       - htop
       - zbar
       - libcxx
       - libcxx.i686
       - ripgrep
-#      - ffmpeg
+      - ffmpeg
       - nmap
       - kate
+
+- name: 'Install commitizen'
+  community.general.npm:
+    name: commitizen
+    path: ~/Programy/commitizen
 
 - name: 'Enable podman socket'
   become: true
@@ -130,7 +135,7 @@
 
 - name: 'Clone dotfiles'
   git:
-    repo: https://github.com/czocher/dotfiles.git
+    repo: https://github.com/certifieddook/dotfiles.git
     dest: ~/.dotfiles
   when: dotfiles_directory.stat.exists == false
   register: dotfiles
@@ -200,14 +205,14 @@
 - name: 'Add ssh publickey to authorized_keys'
   authorized_key:
     user: czocher
-    key: https://github.com/czocher.keys
+    key: https://github.com/certifieddook.keys
     state: present
 
 - name: 'Add ssh publickey to root authorized_keys'
   become: true
   authorized_key:
     user: root
-    key: https://github.com/czocher.keys
+    key: https://github.com/certifieddook.keys
     state: present
 
 - name: 'Allow for sudo ssh key authentication'
