@@ -141,7 +141,7 @@
 
 - name: 'Clone dotfiles'
   git:
-    repo: https://github.com/certifieddook/dotfiles.git
+    repo: https://github.com/czocher/dotfiles.git
     dest: ~/.dotfiles
   when: dotfiles_directory.stat.exists == false
   register: dotfiles
@@ -211,14 +211,14 @@
 - name: 'Add ssh publickey to authorized_keys'
   authorized_key:
     user: czocher
-    key: https://github.com/certifieddook.keys
+    key: https://github.com/czocher.keys
     state: present
 
 - name: 'Add ssh publickey to root authorized_keys'
   become: true
   authorized_key:
     user: root
-    key: https://github.com/certifieddook.keys
+    key: https://github.com/czocher.keys
     state: present
 
 - name: 'Allow for sudo ssh key authentication'
