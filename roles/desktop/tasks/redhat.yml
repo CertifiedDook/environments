@@ -40,6 +40,8 @@
   become: true
   community.general.rpm_ostree_pkg:
     pkg:
+      - pam-u2f
+      - pamu2fcfg
       - docker-compose
       - mozilla-openh264
       - python3-virtualenvwrapper
@@ -88,6 +90,11 @@
   command: ~/Programy/node-v18.16.0-linux-x64/bin/npm install -g commitizen cz-conventional-changelog
   args:
     creates: ~/Programy/node-v18.16.0-linux-x64/bin/git-cz
+
+- name: 'Create the Yubico directory'
+  file:
+    path: ~/.config/Yubico
+    state: directory
 
 - name: 'Enable podman socket'
   become: true
@@ -232,6 +239,19 @@
     new_control: sufficient
     new_module_path: pam_ssh_agent_auth.so
     module_arguments: file=/root/.ssh/authorized_keys
+    state: before
+
+- name: 'Allow for u2f lockscreen unlock'
+  become: true
+  pamd:
+    name: kde
+    type: auth
+    control: substack
+    module_path: system-auth
+    new_type: auth
+    new_control: sufficient
+    new_module_path: pam_u2f.so
+    module_arguments: cue
     state: before
 
 - name: 'Allow for su ssh key authentication'
