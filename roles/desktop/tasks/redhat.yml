@@ -297,6 +297,13 @@
     src: 'user.js'
     dest: ~/.mozilla/firefox/{{ profile.stdout }}/
 
+- name: 'Config udev rules for yubikey session lock'
+  become: true
+  template:
+    src: '85-yubikey.rules'
+    dest: /etc/udev/rules.d/
+  register: udev
+
 - name: 'Config udev rules for android development'
   become: true
   template:
