@@ -27,7 +27,7 @@
   command: flatpak override --user --filesystem=xdg-config/gtk-3.0:ro;
 
 - name: 'Set the dark theme for flatpak apps'
-  command: flatpak override --user --env=GTK_THEME=Breeze-Dark
+  command: flatpak override --user --env=GTK_THEME=Adwaita:dark
 
 - name: 'Install rpmfusion repositories'
   become: true
