@@ -1,2 +1,2 @@
 # Lock the session when the yubikey is removed
-ACTION=="remove", SUBSYSTEM=="usb", ENV{PRODUCT}="1050/407/527", RUN+="/usr/bin/loginctl lock-sessions"
+ACTION=="remove", SUBSYSTEM=="input", ATTRS{idVendor}=="1050",  ATTRS{idProduct}=="0407", RUN+="/usr/bin/loginctl lock-sessions"
