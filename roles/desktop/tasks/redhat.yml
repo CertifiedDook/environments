@@ -20,6 +20,8 @@
       - org.pulseaudio.pavucontrol
       - org.darktable.Darktable
       - org.gtk.Gtk3theme.Breeze
+      - org.mozilla.Thunderbird
+      - com.ulduzsoft.Birdtray
     state: present
     method: user
 
@@ -68,9 +70,9 @@
       - python3-neovim
       - rcm
       - ncmpc
-      - mplayer
-      - exfat-utils
-      - fuse-exfat
+      #- mplayer
+      #- exfat-utils
+      #- fuse-exfat
       - htop
       - zbar
       - libcxx
@@ -80,16 +82,16 @@
       - nmap
       - kate
 
-- name: 'Install node LTS'
-  ansible.builtin.unarchive:
-    src: https://nodejs.org/dist/v18.16.0/node-v18.16.0-linux-x64.tar.xz
-    dest: ~/Programy/
-    remote_src: yes
+#- name: 'Install node LTS'
+#  ansible.builtin.unarchive:
+#    src: https://nodejs.org/dist/v18.16.0/node-v18.16.0-linux-x64.tar.xz
+#    dest: ~/Programy/
+#    remote_src: yes
 
-- name: 'Install commitizen'
-  command: ~/Programy/node-v18.16.0-linux-x64/bin/npm install -g commitizen cz-conventional-changelog
-  args:
-    creates: ~/Programy/node-v18.16.0-linux-x64/bin/git-cz
+#- name: 'Install commitizen'
+#  command: ~/Programy/node-v18.16.0-linux-x64/bin/npm install -g commitizen cz-conventional-changelog
+#  args:
+#    creates: ~/Programy/node-v18.16.0-linux-x64/bin/git-cz
 
 - name: 'Create the Yubico directory'
   file:
@@ -399,3 +401,4 @@
     src: '/usr/bin/podman'
     dest: '~/.bin/docker'
     state: link
+
